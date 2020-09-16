@@ -18,11 +18,7 @@ impl Flags {
   }
 
   pub fn set_flag(&mut self, result: u16) {
-    if result == 0 {
-      self.z = true;
-    } else {
-      self.z = false;
-    }
+    self.z = if result == 0 { true } else { false};
     if result > 0xff {
       self.c = true;
     }
