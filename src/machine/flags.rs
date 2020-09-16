@@ -19,9 +19,7 @@ impl Flags {
 
   pub fn set_flag(&mut self, result: u16) {
     self.z = if result == 0 { true } else { false};
-    if result > 0xff {
-      self.c = true;
-    }
+    self.c = if result > 0xff { true } else { false};
   }
 }
 
@@ -36,5 +34,21 @@ mod test {
     assert_eq!(flags.z, true);
     flags.set_flag(1);
     assert_eq!(flags.z, false);
+    flags.set_flag(0);
+    assert_eq!(flags.z, true);
+  }
+
+  #[test]
+  //TODO: confirm flag works correctly
+  fn it_sets_flag_c() {
+    let mut flags = Flags::new();
+    flags.set_flag(0);
+    assert_eq!(flags.c, false);
+    flags.set_flag(0xff);
+    assert_eq!(flags.c, false);
+    flags.set_flag(0xff + 1);
+    assert_eq!(flags.c, true);
+    flags.set_flag(0);
+    assert_eq!(flags.c, false);
   }
 }
