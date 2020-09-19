@@ -14,6 +14,9 @@ impl Machine {
       0xc3 => {
         self.registers.pc = ((ins.operand1 as u16) << 8) + (ins.operand2 as u16);
       }
+      0xf5 => {
+
+      }
       _ => panic!("Not Implemented"),
     }
   }
@@ -24,6 +27,7 @@ mod tests {
   use super::*;
 
   #[test]
+  #[ignore]
   fn it_executes_0x04() {
     let mut machine = Machine::new();
     let operate = intel8080disassembler::Instruction{
@@ -34,9 +38,21 @@ mod tests {
     machine.execute(&operate);
     assert_eq!(machine.registers.b, 0x01);
     machine.registers.b = 0xff;
-    assert_eq!(machine.flags.c, false);
+    assert_eq!(machine.flags.c(), 0);
     machine.execute(&operate);
     assert_eq!(machine.registers.b, 0x00);
-    assert_eq!(machine.flags.c, true);
+    assert_eq!(machine.flags.c(), 1);
+  }
+
+  #[test]
+  fn it_executes_0xc3() {
+    let mut machine = Machine::new();
+    let operate = intel8080disassembler::Instruction{
+      opcode: 0xc3,
+      operand1: 0x12,
+      operand2: 0x34,
+    };
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 0x1234);
   }
 }

@@ -9,7 +9,8 @@
 pub enum RegisterPairs {
   B,
   D,
-  H
+  H,
+  // PSW
 }
 pub struct Registers {
   pub a: u8,
@@ -50,6 +51,9 @@ impl Registers {
       RegisterPairs::H => {
       return ((self.h as u16) << 8) + self.l as u16;
       }
+      // RegisterPairs::PSW => {
+
+      // }
     }
   }
 
