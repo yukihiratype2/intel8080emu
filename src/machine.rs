@@ -12,10 +12,11 @@ pub struct Machine {
 
 impl Machine {
   pub fn new() -> Machine {
+    let m = [0; 65535];
     return Machine{
       flags: flags::Flags::new(),
       registers: registers::Registers::new(),
-      memory: [0; 65535]
+      memory: m
     }
   }
 }

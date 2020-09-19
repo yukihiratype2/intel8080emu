@@ -59,6 +59,25 @@
       },
       "args": [],
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug integration test 'integration_test'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=integration_test",
+          "--package=intel8080emu"
+        ],
+        "filter": {
+          "name": "integration_test",
+          "kind": "test"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
     }
   ]
 }

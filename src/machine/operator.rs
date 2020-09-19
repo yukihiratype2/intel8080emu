@@ -8,7 +8,11 @@ impl Machine {
       0x04 => {
         let result = ((*self.locator(ins.operand1)) as u16) + 1;
         *self.locator(ins.operand1) = result as u8;
-        self.flags.set_flag(result)
+        self.flags.set_flag(result);
+        self.registers.pc += 1;
+      }
+      0xc3 => {
+        self.registers.pc = ((ins.operand1 as u16) << 8) + (ins.operand2 as u16);
       }
       _ => panic!("Not Implemented"),
     }
