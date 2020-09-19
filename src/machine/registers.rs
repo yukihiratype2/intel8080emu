@@ -10,7 +10,7 @@ pub enum RegisterPairs {
   B,
   D,
   H,
-  // PSW
+  PSW
 }
 pub struct Registers {
   pub a: u8,
@@ -22,6 +22,7 @@ pub struct Registers {
   pub l: u8,
   pub pc: u16,
   pub sp: u16,
+  pub flag: u8,
 }
 
 impl Registers {
@@ -36,24 +37,50 @@ impl Registers {
       l: 0,
       pc: 0,
       sp: 0,
+      flag: 0,
     }
+  }
+
+  pub fn set_flag(&mut self, result: u16) {
+    if result == 0 {
+      self.flag |= 0x40;
+    }
+    if result > 0xff {
+      self.flag |= 0x01;
+    }
+  }
+
+  pub fn c(&self) -> u8 {
+    return self.flag & 0b1;
+  }
+  pub fn ac(&self) -> u8 {
+    return (self.flag & 0x10) >> 4;
+  }
+  pub fn s(&self) -> u8 {
+    return (self.flag & 0x80) >> 7;
+  }
+  pub fn z(&self) -> u8 {
+    return (self.flag & 0x40) >> 6;
+  }
+  pub fn p(&self) -> u8 {
+    return (self.flag & 0x04) >> 2;
   }
 
   // get register pair (16-bit)
   pub fn get_rp(&self, r: RegisterPairs) -> u16 {
     match r {
       RegisterPairs::B => {
-      return ((self.b as u16) << 8) + self.c as u16;
+        return ((self.b as u16) << 8) + self.c as u16;
       }
       RegisterPairs::D => {
-      return ((self.d as u16) << 8) + self.e as u16;
+        return ((self.d as u16) << 8) + self.e as u16;
       }
       RegisterPairs::H => {
-      return ((self.h as u16) << 8) + self.l as u16;
+        return ((self.h as u16) << 8) + self.l as u16;
       }
-      // RegisterPairs::PSW => {
-
-      // }
+      RegisterPairs::PSW => {
+        return ((self.a as u16) << 8) + self.flag as u16;
+      }
     }
   }
 
@@ -70,6 +97,9 @@ impl Registers {
       RegisterPairs::H => {
         self.h = (v >> 8) as u8;
         self.l = (v & 0xff) as u8;
+      }
+      RegisterPairs::PSW => {
+        panic!("Can't set PSW")
       }
     }
   }
@@ -104,5 +134,27 @@ mod tests {
     registers.set_rp(RegisterPairs::H, 0x1234);
     assert_eq!(registers.h, 0x12);
     assert_eq!(registers.l, 0x34);
+  }
+
+  #[test]
+  fn it_sets_flag_z() {
+    let mut flags = Registers::new();
+    flags.set_flag(1);
+    assert_eq!(flags.z(), 0);
+    flags.set_flag(0);
+    assert_eq!(flags.z(), 1);
+  }
+
+  #[test]
+  #[ignore]
+  //TODO: confirm flag works correctly
+  fn it_sets_flag_c() {
+    let mut flags = Registers::new();
+    flags.set_flag(0);
+    assert_eq!(flags.c(), 0);
+    flags.set_flag(0xff);
+    assert_eq!(flags.c(), 0);
+    flags.set_flag(0xff + 1);
+    assert_eq!(flags.c(), 1);
   }
 }
