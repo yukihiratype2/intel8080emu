@@ -37,7 +37,7 @@ impl Registers {
       l: 0,
       pc: 0,
       sp: 0,
-      flag: 0,
+      flag: 0b00000010,
     }
   }
 

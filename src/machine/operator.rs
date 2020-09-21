@@ -1,12 +1,23 @@
 use super::super::Machine;
-use super::registers::{RegisterPairs};
+use super::register::{RegisterPairs};
 use intel8080disassembler;
 
 impl Machine {
+  pub fn process_cycles(&mut self) {
+    let (ins, _) = intel8080disassembler::disassemble(self.registers.pc as usize, self.memory);
+    println!("{:x?}, pc: {:#x}", ins, self.registers.pc);
+    self.execute(&ins);
+    // self.registers.pc += pc_increase as u16;
+  }
+
   pub fn execute(&mut self, ins: &intel8080disassembler::Instruction) {
     match ins.opcode {
+      0x00 => {
+        self.registers.pc += 1;
+      }
       0x01 => {
         self.registers.set_rp(RegisterPairs::B, ((ins.operand2 as u16) << 8) + (ins.operand1 as u16));
+        self.registers.pc += 1;
       }
       0x03 => {},
       0x04 => {
@@ -18,9 +29,10 @@ impl Machine {
       0x06 => {}
       0x31 => {
         self.registers.sp = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
+        self.registers.pc += 3;
       },
       0xc3 => {
-        self.registers.pc = ((ins.operand1 as u16) << 8) + (ins.operand2 as u16);
+        self.registers.pc = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
       }
       0xcd => {
         self.memory[self.registers.sp as usize - 1] = ((self.registers.pc & 0xff00) >> 8) as u8;
@@ -28,10 +40,15 @@ impl Machine {
         self.registers.sp -= 2;
         self.registers.pc = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
       }
+      0xe6 => {},
       0xf5 => {
 
       }
-      _ => panic!("Not Implemented"),
+      _ => {
+        println!("{:x?}", ins);
+        println!("PC: {:#x}", self.registers.pc);
+        panic!("Not Implemented");
+      },
     }
   }
 }
@@ -86,11 +103,11 @@ mod tests {
     let mut machine = Machine::new();
     let operate = intel8080disassembler::Instruction{
       opcode: 0xc3,
-      operand1: 0x12,
-      operand2: 0x34,
+      operand1: 0xab,
+      operand2: 0x01,
     };
     machine.execute(&operate);
-    assert_eq!(machine.registers.pc, 0x1234);
+    assert_eq!(machine.registers.pc, 0x01ab);
   }
 
   #[test]
@@ -109,5 +126,10 @@ mod tests {
     assert_eq!(machine.memory[0xeeee - 2], 0x34);
     assert_eq!(machine.registers.sp, 0xeeee - 2);
     assert_eq!(machine.registers.pc, 0x7856)
+  }
+
+  #[test]
+  fn it_executes_0xe6() {
+
   }
 }

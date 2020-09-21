@@ -1,5 +1,5 @@
 use super::super::Machine;
-use super::registers::{RegisterPairs};
+use super::register::{RegisterPairs};
 
 impl Machine {
   pub fn locator(&mut self, reg: u8) -> &mut u8 {
@@ -22,12 +22,12 @@ impl Machine {
     }
   }
 
-  pub fn load_rom(&mut self, rom: &Vec<u8>) {
+  pub fn load_rom(&mut self, rom: &Vec<u8>, org: u16) {
     // reset rom
     self.memory = [0; 65535];
 
     for (i, x) in rom.iter().enumerate() {
-      self.memory[i] = *x;
+      self.memory[i + (org as usize)] = *x;
     }
   }
 }
@@ -61,11 +61,11 @@ mod tests {
   #[test]
   fn it_load_rom() {
     let mut machine = Machine::new();
-    machine.load_rom(&vec![0xc3, 0x23, 0x22]);
+    machine.load_rom(&vec![0xc3, 0x23, 0x22], 0x00);
     assert_eq!(machine.memory[0], 0xc3);
     assert_eq!(machine.memory[1], 0x23);
     assert_eq!(machine.memory[2], 0x22);
-    machine.load_rom(&vec![0x11]);
+    machine.load_rom(&vec![0x11], 0x00);
     assert_eq!(machine.memory[0], 0x11);
     assert_eq!(machine.memory[1], 0x00);
   }
