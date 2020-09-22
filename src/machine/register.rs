@@ -42,12 +42,9 @@ impl Registers {
   }
 
   pub fn set_flag(&mut self, result: u16) {
-    if result == 0 {
-      self.flag |= 0x40;
-    }
-    if result > 0xff {
-      self.flag |= 0x01;
-    }
+    self.flag = if result == 0 { self.flag | 0b01000000 } else { self.flag & 0b10111111 };
+    self.flag = if result > 0xff { self.flag | 0b01 } else { self.flag & 0b11111110 };
+    // self.flag = if (result % 2) == 0 { 0 } else { 1 }
   }
 
   pub fn c(&self) -> u8 {
@@ -143,11 +140,11 @@ mod tests {
     assert_eq!(flags.z(), 0);
     flags.set_flag(0);
     assert_eq!(flags.z(), 1);
+    flags.set_flag(1);
+    assert_eq!(flags.z(), 0);
   }
 
   #[test]
-  #[ignore]
-  //TODO: confirm flag works correctly
   fn it_sets_flag_c() {
     let mut flags = Registers::new();
     flags.set_flag(0);
@@ -156,5 +153,7 @@ mod tests {
     assert_eq!(flags.c(), 0);
     flags.set_flag(0xff + 1);
     assert_eq!(flags.c(), 1);
+    flags.set_flag(0x00 + 1);
+    assert_eq!(flags.c(), 0);
   }
 }
