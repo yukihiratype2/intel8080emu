@@ -21,7 +21,7 @@ impl Machine {
       }
       0x03 => {},
       0x04 => {
-        let result = ((*self.locator(ins.operand1)) as u16) + 1;
+        let result = ((*self.locator(ins.operand1)) as i16) + 1;
         *self.locator(ins.operand1) = result as u8;
         self.registers.set_flag(result);
         self.registers.pc += 1;
@@ -29,6 +29,13 @@ impl Machine {
       0x06 => {}
       0x31 => {
         self.registers.sp = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
+        self.registers.pc += 3;
+      },
+      0xc2 => {
+        if self.registers.z() == 0 {
+          self.registers.pc = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
+          return;
+        }
         self.registers.pc += 3;
       },
       0xc3 => {
@@ -56,9 +63,23 @@ impl Machine {
       },
       0xe6 => {
         self.registers.a &= ins.operand1;
-        self.registers.set_flag(self.registers.a as u16);
+        self.registers.set_flag(self.registers.a as i16);
         self.registers.pc += 2;
       },
+      0xea => {
+        if self.registers.p() == 1 {
+          self.registers.pc = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
+          return;
+        }
+        self.registers.pc += 3;
+      },
+      0xf2 => {
+        if self.registers.s() == 0 {
+          self.registers.pc = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
+          return;
+        }
+        self.registers.pc += 3;
+      }
       // 0xf5 => {
 
       // }
@@ -190,5 +211,37 @@ mod tests {
     machine.execute(&operate);
     assert_eq!(machine.registers.a, 0x10 & 0x11);
     assert_eq!(machine.registers.pc, 4)
+  }
+
+  #[test]
+  fn it_executes_0xea() {
+    let mut machine = Machine::new();
+    machine.registers.set_flag(0b1);
+    let operate = intel8080disassembler::Instruction{
+      opcode: 0xea,
+      operand1: 0x23,
+      operand2: 0xac,
+    };
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 3);
+    machine.registers.set_flag(0b11);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 0xac23);
+  }
+
+  #[test]
+  fn it_executes_0xf2() {
+    let mut machine = Machine::new();
+    machine.registers.set_flag(-1);
+    let operate = intel8080disassembler::Instruction{
+      opcode: 0xf2,
+      operand1: 0x23,
+      operand2: 0xac,
+    };
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 3);
+    machine.registers.set_flag(0b1);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 0xac23);
   }
 }
