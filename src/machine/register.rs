@@ -41,17 +41,17 @@ impl Registers {
     }
   }
 
-  pub fn set_flag(&mut self, result: i16) {
+  pub fn set_flag(&mut self, result: u16) {
     self.flag = if result == 0 { self.flag | 0b01000000 } else { self.flag & 0b10111111 };
     self.flag = if result > 0xff { self.flag | 0b01 } else { self.flag & 0b11111110 };
-    let mut x = result;
+    let mut x = result & 0xff;
     x ^= x >> 8;
     x ^= x >> 4;
     x ^= x >> 2;
     x ^= x >> 1;
     x = ((!x) & 1) << 2;
     self.flag = if x != 0 { self.flag | 0b100 } else {self.flag & 0b11111011};
-    self.flag = if result < 0 { self.flag | 0b10000000 } else  {self.flag & 0b01111111};
+    self.flag = if (result & 0b10000000) == 0b10000000 { self.flag | 0b10000000 } else  {self.flag & 0b01111111};
   }
 
   pub fn c(&self) -> u8 {
@@ -177,6 +177,8 @@ mod tests {
     assert_eq!(flags.p(), 0);
     flags.set_flag(0b1011);
     assert_eq!(flags.p(), 0);
+    flags.set_flag(0xf5);
+    assert_eq!(flags.p(), 1);
   }
 
   #[test]
@@ -184,9 +186,9 @@ mod tests {
     let mut flags = Registers::new();
     flags.set_flag(1);
     assert_eq!(flags.s(), 0);
-    flags.set_flag(-1);
+    flags.set_flag(0b10000000);
     assert_eq!(flags.s(), 1);
     flags.set_flag(0xfff);
-    assert_eq!(flags.s(), 0);
+    assert_eq!(flags.s(), 1);
   }
 }
