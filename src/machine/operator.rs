@@ -353,20 +353,19 @@ mod tests {
     machine.registers.a = 0x4a;
     let operate = intel8080disassembler::Instruction{
       opcode: 0xfe,
-      operand1: 0b01000000,
-      operand2: 0x00,
-    };
-    machine.execute(&operate);
-    assert_eq!(machine.registers.c(), 1);
-    assert_eq!(machine.registers.z(), 0);
-    machine.registers.a = 0xf5;
-    let operate = intel8080disassembler::Instruction{
-      opcode: 0xfe,
-      operand1: 0b0,
+      operand1: 0x4a,
       operand2: 0x00,
     };
     machine.execute(&operate);
     assert_eq!(machine.registers.c(), 0);
+    assert_eq!(machine.registers.z(), 1);
+    let operate = intel8080disassembler::Instruction{
+      opcode: 0xfe,
+      operand1: 0xff,
+      operand2: 0x00,
+    };
+    machine.execute(&operate);
+    assert_eq!(machine.registers.c(), 1);
     assert_eq!(machine.registers.z(), 0);
   }
 }
