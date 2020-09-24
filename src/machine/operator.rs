@@ -108,9 +108,9 @@ impl Machine {
         self.registers.pc += 3;
       },
       0xfe => {
-        let op = (ins.operand1 ^ 0b10000000) as u16;
+        let op = (!ins.operand1) as u16 + 1;
         let result = self.registers.a as u16 + op;
-        self.registers.set_flag(result);
+        self.registers.set_sub_flat(result);
         self.registers.pc += 2;
       }
       // 0xf5 => {

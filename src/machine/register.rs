@@ -53,6 +53,11 @@ impl Registers {
     self.flag = if x != 0 { self.flag | 0b100 } else {self.flag & 0b11111011};
     self.flag = if (result & 0b10000000) == 0b10000000 { self.flag | 0b10000000 } else  {self.flag & 0b01111111};
   }
+  pub fn set_sub_flat(&mut self, result: u16) {
+    self.set_flag(result);
+    self.flag ^= 0b1;
+    self.flag = if (result & 0xff) == 0 { self.flag | 0b01000000 } else { self.flag & 0b10111111 };
+  }
 
   pub fn c(&self) -> u8 {
     return self.flag & 0b1;
