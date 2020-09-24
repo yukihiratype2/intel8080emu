@@ -3,6 +3,7 @@
 [[package]]
 name = "intel8080disassembler"
 version = "0.1.0"
+source = "git+https://github.com/yukihiratype2/intel8080disassembler#c1ba4ffe4bffd9ef3e06a27cda0e8049552cdbee"
 
 [[package]]
 name = "intel8080emu"

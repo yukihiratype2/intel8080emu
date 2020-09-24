@@ -4,6 +4,7 @@ pub struct Pin {
   pub a0: bool,
   pub a1: bool,
   pub a2: bool,
+  pub int: bool,
 }
 
 impl Pin {
@@ -12,6 +13,7 @@ impl Pin {
       a0: false,
       a1: false,
       a2: false,
+      int: false,
     }
   }
 }

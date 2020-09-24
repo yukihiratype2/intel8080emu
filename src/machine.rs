@@ -3,6 +3,7 @@ pub mod memory;
 pub mod utils;
 mod pin;
 mod operator;
+mod interrupt;
 
 pub struct Machine {
   pub registers: register::Registers,

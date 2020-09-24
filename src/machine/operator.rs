@@ -4,10 +4,10 @@ use intel8080disassembler;
 
 impl Machine {
   pub fn process_cycles(&mut self) {
+    self.check_interrupt();
     let (ins, _) = intel8080disassembler::disassemble(self.registers.pc as usize, self.memory);
     println!("{:x?}, pc: {:#x}", ins, self.registers.pc);
     self.execute(&ins);
-    // self.registers.pc += pc_increase as u16;
   }
 
   pub fn execute(&mut self, ins: &intel8080disassembler::Instruction) {
