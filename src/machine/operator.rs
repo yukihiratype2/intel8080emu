@@ -31,10 +31,242 @@ impl Machine {
         self.registers.set_flag(result);
         self.registers.pc += 1;
       }
+      0x05 => {
+        let result = (self.registers.b as u16) + 0xff;
+        self.registers.set_sub_flat(result);
+        self.registers.b = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x0c => {
+        // Not tested
+        let result = (self.registers.c as u16) + 0x01;
+        self.registers.set_flag(result);
+        self.registers.c = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x0d => {
+        let result = (self.registers.c as u16) + 0xff;
+        self.registers.set_sub_flat(result);
+        self.registers.c = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x14 => {
+        // May have bug
+        let result = (self.registers.d as u16) + 1;
+        self.registers.set_flag(result);
+        self.registers.d = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x15 => {
+        let result = (self.registers.d as u16) + 0xff;
+        self.registers.set_sub_flat(result);
+        self.registers.d = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x1c => {
+        let result = (self.registers.e as u16) + 0x01;
+        self.registers.set_flag(result);
+        self.registers.e = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      }
+      0x1d => {
+        let result = (self.registers.d as u16) + 0xff;
+        self.registers.set_sub_flat(result);
+        self.registers.d = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x24 => {
+        // Not tested
+        let result = (self.registers.h as u16) + 0x01;
+        self.registers.set_flag(result);
+        self.registers.h = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x25 => {
+        let result = (self.registers.h as u16) + 0xff;
+        self.registers.set_sub_flat(result);
+        self.registers.h = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x2c => {
+        // Not tested
+        let result = (self.registers.l as u16) + 0x01;
+        self.registers.set_flag(result);
+        self.registers.l = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
       0x31 => {
         self.registers.sp = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
         self.registers.pc += 3;
       }
+      0x3d => {
+        let result = (self.registers.a as u16) + 0xff;
+        self.registers.set_sub_flat(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x3e => {
+        self.registers.a = ins.operand1;
+        self.registers.pc += 2;
+      }
+      0x3c => {
+        let result = (self.registers.a as u16) + 1;
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x41 => {
+        self.registers.b = self.registers.c;
+        self.registers.pc += 1;
+      },
+      0x42 => {
+        self.registers.b = self.registers.d;
+        self.registers.pc += 1;
+      },
+      0x43 => {
+        self.registers.b = self.registers.e;
+        self.registers.pc += 1;
+      },
+      0x44 => {
+        self.registers.b = self.registers.h;
+        self.registers.pc += 1;
+      },
+      0x45 => {
+        self.registers.b = self.registers.l;
+        self.registers.pc += 1;
+      },
+      0x47 => {
+        self.registers.b = self.registers.a;
+        self.registers.pc += 1;
+      },
+      0x48 => {
+        self.registers.a = self.registers.b;
+        self.registers.pc += 1;
+      },
+      0x4c => {
+        self.registers.c = self.registers.h;
+        self.registers.pc += 1;
+      },
+      0x4d => {
+        self.registers.c = self.registers.l;
+        self.registers.pc += 1;
+      },
+      0x4f => {
+        self.registers.c = self.registers.a;
+        self.registers.pc += 1;
+      },
+      0x50 => {
+        self.registers.d = self.registers.b;
+        self.registers.pc += 1;
+      },
+      0x51 => {
+        self.registers.d = self.registers.c;
+        self.registers.pc += 1;
+      },
+      0x54 => {
+        self.registers.d = self.registers.h;
+        self.registers.pc += 1;
+      },
+      0x55 => {
+        self.registers.d = self.registers.l;
+        self.registers.pc += 1;
+      },
+      0x57 => {
+        self.registers.d = self.registers.a;
+        self.registers.pc += 1;
+      },
+      0x58 => {
+        self.registers.e = self.registers.b;
+        self.registers.pc += 1;
+      },
+      0x59 => {
+        self.registers.e = self.registers.c;
+        self.registers.pc += 1;
+      },
+      0x5a => {
+        self.registers.e = self.registers.d;
+        self.registers.pc += 1;
+      },
+      0x5c => {
+        self.registers.e = self.registers.h;
+        self.registers.pc += 1;
+      },
+      0x5d => {
+        self.registers.e = self.registers.l;
+        self.registers.pc += 1;
+      },
+      0x5f => {
+        self.registers.e = self.registers.a;
+        self.registers.pc += 1;
+      },
+      0x60 => {
+        self.registers.h = self.registers.b;
+        self.registers.pc += 1;
+      },
+      0x61 => {
+        self.registers.h = self.registers.c;
+        self.registers.pc += 1;
+      },
+      0x62 => {
+        self.registers.h = self.registers.d;
+        self.registers.pc += 1;
+      },
+      0x63 => {
+        self.registers.h = self.registers.e;
+        self.registers.pc += 1;
+      },
+      0x65 => {
+        self.registers.h = self.registers.l;
+        self.registers.pc += 1;
+      },
+      0x67 => {
+        self.registers.h = self.registers.a;
+        self.registers.pc += 1;
+      },
+      0x68 => {
+        self.registers.l = self.registers.b;
+        self.registers.pc += 1;
+      },
+      0x69 => {
+        self.registers.l = self.registers.c;
+        self.registers.pc += 1;
+      },
+      0x6a => {
+        self.registers.l = self.registers.d;
+        self.registers.pc += 1;
+      },
+      0x6b => {
+        self.registers.l = self.registers.e;
+        self.registers.pc += 1;
+      },
+      0x6c => {
+        self.registers.l = self.registers.h;
+        self.registers.pc += 1;
+      },
+      0x78 => {
+        self.registers.a = self.registers.b;
+        self.registers.pc += 1;
+      },
+      0x79 => {
+        self.registers.a = self.registers.c;
+        self.registers.pc += 1;
+      },
+      0x7a => {
+        self.registers.a = self.registers.d;
+        self.registers.pc += 1;
+      },
+      0x7b => {
+        self.registers.a = self.registers.e;
+        self.registers.pc += 1;
+      },
+      0x7c => {
+        self.registers.a = self.registers.h;
+        self.registers.pc += 1;
+      },
+      0x7d => {
+        self.registers.a = self.registers.l;
+        self.registers.pc += 1;
+      },
       0xc0 => {
         if self.registers.z() == 0 {
           self.execute(&intel8080disassembler::Instruction {
@@ -108,8 +340,8 @@ impl Machine {
         self.registers.pc += 3;
       }
       0xcd => {
-        self.memory[self.registers.sp as usize - 1] = (((self.registers.pc + 1) & 0xff00) >> 8) as u8;
-        self.memory[self.registers.sp as usize - 2] = ((self.registers.pc + 1) & 0xff) as u8;
+        self.memory[self.registers.sp as usize - 1] = (((self.registers.pc + 3) & 0xff00) >> 8) as u8;
+        self.memory[self.registers.sp as usize - 2] = ((self.registers.pc + 3) & 0xff) as u8;
         self.registers.sp -= 2;
         self.registers.pc = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
       }
@@ -361,6 +593,21 @@ mod tests {
   }
 
   #[test]
+  fn it_executes_0x14() {
+    let mut machine = Machine::new();
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0x14,
+      operand1: 0x00,
+      operand2: 0x00,
+    };
+    machine.execute(&operate);
+    assert_eq!(machine.registers.d, 1);
+    machine.registers.d = 0xff;
+    machine.execute(&operate);
+    assert_eq!(machine.registers.d, 0);
+  }
+
+  #[test]
   fn it_executes_0x31() {
     let mut machine = Machine::new();
     let operate = intel8080disassembler::Instruction {
@@ -370,6 +617,20 @@ mod tests {
     };
     machine.execute(&operate);
     assert_eq!(machine.registers.sp, 0x2412);
+  }
+
+  #[test]
+  fn it_executes_0x47() {
+    let mut machine = Machine::new();
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0x47,
+      operand1: 0x00,
+      operand2: 0x00,
+    };
+    machine.registers.a = 0x12;
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 1);
+    assert_eq!(machine.registers.b, 0x12);
   }
 
   #[test]
@@ -387,6 +648,20 @@ mod tests {
     machine.execute(&operate);
     assert_eq!(machine.registers.b, 0x00);
     assert_eq!(machine.registers.c(), 1);
+  }
+
+  #[test]
+  fn it_executes_0x0d() {
+    let mut machine = Machine::new();
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0x0d,
+      operand1: 0x00,
+      operand2: 0x00,
+    };
+    machine.registers.c = 0xff;
+    machine.execute(&operate);
+    assert_eq!(machine.registers.c, 0xff - 1);
+    assert_eq!(machine.registers.pc, 1);
   }
 
   #[test]
@@ -534,7 +809,7 @@ mod tests {
     machine.execute(&operate);
     assert_eq!(machine.registers.sp, 0xeeee - 2);
     assert_eq!(machine.memory[0xeeee - 1], 0x12);
-    assert_eq!(machine.memory[0xeeee - 2], 0x35);
+    assert_eq!(machine.memory[0xeeee - 2], 0x34 + 3);
     assert_eq!(machine.registers.sp, 0xeeee - 2);
     assert_eq!(machine.registers.pc, 0x7856)
   }
