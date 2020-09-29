@@ -42,7 +42,7 @@ impl Registers {
   }
 
   pub fn set_flag(&mut self, result: u16) {
-    self.flag = if result == 0 { self.flag | 0b01000000 } else { self.flag & 0b10111111 };
+    self.flag = if (result & 0xff) == 0 { self.flag | 0b01000000 } else { self.flag & 0b10111111 };
     self.flag = if result > 0xff { self.flag | 0b01 } else { self.flag & 0b11111110 };
     let mut x = result & 0xff;
     x ^= x >> 8;

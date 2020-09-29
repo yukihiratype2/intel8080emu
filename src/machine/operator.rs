@@ -6,10 +6,10 @@ impl Machine {
   pub fn process_cycles(&mut self) {
     self.check_interrupt();
     let (ins, _) = intel8080disassembler::disassemble(self.registers.pc as usize, self.memory);
-    if cfg!(debug_assertions) {
-      println!("{:x?}, pc: {:#x}", ins, self.registers.pc);
-    }
     self.execute(&ins);
+    if cfg!(debug_assertions) {
+      println!("{:x?}, pc: {:#x}, a: {:#x}", ins, self.registers.pc, self.registers.a);
+    }
   }
 
   pub fn execute(&mut self, ins: &intel8080disassembler::Instruction) {
@@ -35,6 +35,17 @@ impl Machine {
         self.registers.sp = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
         self.registers.pc += 3;
       }
+      0xc0 => {
+        if self.registers.z() == 0 {
+          self.execute(&intel8080disassembler::Instruction {
+            opcode: 0xc9,
+            operand1: 0x00,
+            operand2: 0x00,
+          });
+          return;
+        }
+        self.registers.pc += 1;
+      },
       0xc2 => {
         if self.registers.z() == 0 {
           self.registers.pc = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
@@ -62,6 +73,22 @@ impl Machine {
         self.registers.a = (result & 0xff) as u8;
         self.registers.pc += 2;
       }
+      0xc8 => {
+        if self.registers.z() == 1 {
+          self.execute(&intel8080disassembler::Instruction {
+            opcode: 0xc9,
+            operand1: 0x00,
+            operand2: 0x00,
+          });
+          return;
+        }
+        self.registers.pc += 1;
+      },
+      0xc9 => {
+        self.registers.pc = (self.memory[self.registers.sp as usize] as u16)
+          + ((self.memory[self.registers.sp as usize + 1] as u16) << 8);
+        self.registers.sp += 2;
+      }
       0xca => {
         if self.registers.z() == 1 {
           self.registers.pc = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
@@ -69,9 +96,20 @@ impl Machine {
         }
         self.registers.pc += 3;
       }
+      0xcc => {
+        if self.registers.z() == 1 {
+          self.execute(&intel8080disassembler::Instruction {
+            opcode: 0xcd,
+            operand1: ins.operand1,
+            operand2: ins.operand2,
+          });
+          return;
+        }
+        self.registers.pc += 3;
+      }
       0xcd => {
-        self.memory[self.registers.sp as usize - 1] = ((self.registers.pc & 0xff00) >> 8) as u8;
-        self.memory[self.registers.sp as usize - 2] = (self.registers.pc & 0xff) as u8;
+        self.memory[self.registers.sp as usize - 1] = (((self.registers.pc + 1) & 0xff00) >> 8) as u8;
+        self.memory[self.registers.sp as usize - 2] = ((self.registers.pc + 1) & 0xff) as u8;
         self.registers.sp -= 2;
         self.registers.pc = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
       }
@@ -81,6 +119,17 @@ impl Machine {
         self.registers.set_flag(result);
         self.registers.a = (result & 0xff) as u8;
         self.registers.pc += 2;
+      }
+      0xd0 => {
+        if self.registers.c() == 0 {
+          self.execute(&intel8080disassembler::Instruction {
+            opcode: 0xc9,
+            operand1: 0x00,
+            operand2: 0x00,
+          });
+          return;
+        }
+        self.registers.pc += 1;
       }
       0xd2 => {
         if self.registers.c() == 0 {
@@ -99,13 +148,24 @@ impl Machine {
           return;
         }
         self.registers.pc += 3;
-      },
+      }
       0xd6 => {
         let op = (!ins.operand1 as u16) + 1;
         let result = self.registers.a as u16 + op;
         self.registers.set_sub_flat(result);
         self.registers.a = (result & 0xff) as u8;
         self.registers.pc += 2;
+      }
+      0xd8 => {
+        if self.registers.c() == 1 {
+          self.execute(&intel8080disassembler::Instruction {
+            opcode: 0xc9,
+            operand1: 0x00,
+            operand2: 0x00,
+          });
+          return;
+        }
+        self.registers.pc += 1;
       }
       0xda => {
         if self.registers.c() == 1 {
@@ -133,6 +193,17 @@ impl Machine {
         self.registers.a = (result & 0xff) as u8;
         self.registers.pc += 2;
       }
+      0xe0 => {
+        if self.registers.p() == 0 {
+          self.execute(&intel8080disassembler::Instruction {
+            opcode: 0xc9,
+            operand1: 0x00,
+            operand2: 0x00,
+          });
+          return;
+        }
+        self.registers.pc += 1;
+      }
       0xe2 => {
         if self.registers.p() == 0 {
           self.registers.pc = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
@@ -156,6 +227,17 @@ impl Machine {
         self.registers.set_flag(self.registers.a as u16);
         self.registers.pc += 2;
       }
+      0xe8 => {
+        if self.registers.p() == 1 {
+          self.execute(&intel8080disassembler::Instruction {
+            opcode: 0xc9,
+            operand1: 0x00,
+            operand2: 0x00,
+          });
+          return;
+        }
+        self.registers.pc += 1;
+      }
       0xea => {
         if self.registers.p() == 1 {
           self.registers.pc = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
@@ -173,16 +255,38 @@ impl Machine {
           return;
         }
         self.registers.pc += 3;
-      },
+      }
       0xee => {
         let result = self.registers.a ^ ins.operand1;
         self.registers.set_flag(result as u16);
         self.registers.a = result;
         self.registers.pc += 2;
       }
+      0xf0 => {
+        if self.registers.s() == 0 {
+          self.execute(&intel8080disassembler::Instruction {
+            opcode: 0xc9,
+            operand1: 0x00,
+            operand2: 0x00,
+          });
+          return;
+        }
+        self.registers.pc += 1;
+      }
       0xf2 => {
         if self.registers.s() == 0 {
           self.registers.pc = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
+          return;
+        }
+        self.registers.pc += 3;
+      }
+      0xf4 => {
+        if self.registers.s() == 0 {
+          self.execute(&intel8080disassembler::Instruction {
+            opcode: 0xcd,
+            operand1: ins.operand1,
+            operand2: ins.operand2,
+          });
           return;
         }
         self.registers.pc += 3;
@@ -192,6 +296,17 @@ impl Machine {
         self.registers.set_flag(result as u16);
         self.registers.a = result;
         self.registers.pc += 2;
+      }
+      0xf8 => {
+        if self.registers.s() == 1 {
+          self.execute(&intel8080disassembler::Instruction {
+            opcode: 0xc9,
+            operand1: 0x00,
+            operand2: 0x00,
+          });
+          return;
+        }
+        self.registers.pc += 1;
       }
       0xfa => {
         if self.registers.s() == 1 {
@@ -223,7 +338,7 @@ impl Machine {
       _ => {
         println!("{:x?}", ins);
         println!("PC: {:#x}", self.registers.pc);
-        panic!("Not Implemented");
+        unimplemented!();
       }
     }
   }
@@ -275,6 +390,24 @@ mod tests {
   }
 
   #[test]
+  fn it_executes_0xc0() {
+    let mut machine = Machine::new();
+    machine.registers.sp = 0xff;
+    machine.memory[0xff] = 0xab;
+    machine.memory[0xff + 1] = 0xcd;
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0xc0,
+      operand1: 0x00,
+      operand2: 0x00,
+    };
+    machine.registers.set_flag(0x0);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 1);
+    machine.registers.set_flag(0xff);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 0xcdab);
+  }
+  #[test]
   fn it_executes_0xc3() {
     let mut machine = Machine::new();
     let operate = intel8080disassembler::Instruction {
@@ -306,12 +439,6 @@ mod tests {
   #[test]
   fn it_executes_0xc6() {
     let mut machine = Machine::new();
-    let ani = intel8080disassembler::Instruction {
-      opcode: 0xe6,
-      operand1: 0x00,
-      operand2: 0x00,
-    };
-    machine.execute(&ani);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xc6,
       operand1: 0x06,
@@ -323,7 +450,43 @@ mod tests {
     assert_eq!(machine.registers.p(), 1);
     assert_eq!(machine.registers.s(), 0);
     assert_eq!(machine.registers.z(), 0);
-    assert_eq!(machine.registers.pc, 0x04);
+    assert_eq!(machine.registers.pc, 0x02);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.a, 12);
+  }
+
+  #[test]
+  fn it_executes_0xc8() {
+    let mut machine = Machine::new();
+    machine.registers.sp = 0xff;
+    machine.memory[0xff] = 0xab;
+    machine.memory[0xff + 1] = 0xcd;
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0xc8,
+      operand1: 0x00,
+      operand2: 0x00,
+    };
+    machine.registers.set_flag(0xfff);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 1);
+    machine.registers.set_flag(0x00);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 0xcdab);
+  }
+  #[test]
+  fn it_executes_0xc9() {
+    let mut machine = Machine::new();
+    machine.registers.sp = 0xff;
+    machine.memory[0xff] = 0x12;
+    machine.memory[0xff + 1] = 0xab;
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0xc9,
+      operand1: 0x00,
+      operand2: 0x00,
+    };
+    machine.execute(&operate);
+    assert_eq!(machine.registers.sp, 0xff + 2);
+    assert_eq!(machine.registers.pc, 0xab12);
   }
 
   #[test]
@@ -339,6 +502,41 @@ mod tests {
     machine.registers.set_flag(0);
     machine.execute(&operate);
     assert_eq!(machine.registers.pc, 0x1ab);
+  }
+
+  #[test]
+  fn it_executes_0xcc() {
+    let mut machine = Machine::new();
+    machine.registers.sp = 0xff;
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0xcc,
+      operand1: 0xab,
+      operand2: 0x10,
+    };
+    machine.registers.set_flag(0);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 0x10ab);
+    machine.registers.set_flag(1);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 0x10ab + 3);
+  }
+
+  #[test]
+  fn it_executes_0xcd() {
+    let mut machine = Machine::new();
+    machine.registers.sp = 0xeeee;
+    machine.registers.pc = 0x1234;
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0xcd,
+      operand1: 0x56,
+      operand2: 0x78,
+    };
+    machine.execute(&operate);
+    assert_eq!(machine.registers.sp, 0xeeee - 2);
+    assert_eq!(machine.memory[0xeeee - 1], 0x12);
+    assert_eq!(machine.memory[0xeeee - 2], 0x35);
+    assert_eq!(machine.registers.sp, 0xeeee - 2);
+    assert_eq!(machine.registers.pc, 0x7856)
   }
 
   #[test]
@@ -359,22 +557,24 @@ mod tests {
   }
 
   #[test]
-  fn it_executes_0xcd() {
+  fn it_executes_0xd0() {
     let mut machine = Machine::new();
-    machine.registers.sp = 0xeeee;
-    machine.registers.pc = 0x1234;
+    machine.registers.sp = 0xff;
+    machine.memory[0xff] = 0xab;
+    machine.memory[0xff + 1] = 0xcd;
     let operate = intel8080disassembler::Instruction {
-      opcode: 0xcd,
-      operand1: 0x56,
-      operand2: 0x78,
+      opcode: 0xd0,
+      operand1: 0x00,
+      operand2: 0x00,
     };
+    machine.registers.set_flag(0xfff);
     machine.execute(&operate);
-    assert_eq!(machine.registers.sp, 0xeeee - 2);
-    assert_eq!(machine.memory[0xeeee - 1], 0x12);
-    assert_eq!(machine.memory[0xeeee - 2], 0x34);
-    assert_eq!(machine.registers.sp, 0xeeee - 2);
-    assert_eq!(machine.registers.pc, 0x7856)
+    assert_eq!(machine.registers.pc, 1);
+    machine.registers.set_flag(0xff);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 0xcdab);
   }
+
   #[test]
   fn it_executes_0xd2() {
     let mut machine = Machine::new();
@@ -433,6 +633,25 @@ mod tests {
   }
 
   #[test]
+  fn it_executes_0xd8() {
+    let mut machine = Machine::new();
+    machine.registers.sp = 0xff;
+    machine.memory[0xff] = 0xab;
+    machine.memory[0xff + 1] = 0xcd;
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0xd8,
+      operand1: 0x00,
+      operand2: 0x00,
+    };
+    machine.registers.set_flag(0b00);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 1);
+    machine.registers.set_flag(0xfff);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 0xcdab);
+  }
+
+  #[test]
   fn it_executes_0xda() {
     let mut machine = Machine::new();
     let operate = intel8080disassembler::Instruction {
@@ -485,6 +704,25 @@ mod tests {
   }
 
   #[test]
+  fn it_executes_0xe0() {
+    let mut machine = Machine::new();
+    machine.registers.sp = 0xff;
+    machine.memory[0xff] = 0xab;
+    machine.memory[0xff + 1] = 0xcd;
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0xe0,
+      operand1: 0x0,
+      operand2: 0x0,
+    };
+    machine.registers.set_flag(0b0);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 1);
+    machine.registers.set_flag(0b111);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 0xcdab);
+  }
+
+  #[test]
   fn it_executes_0xe2() {
     let mut machine = Machine::new();
     machine.registers.set_flag(0x0);
@@ -531,6 +769,25 @@ mod tests {
     machine.execute(&operate);
     assert_eq!(machine.registers.a, 0x10 & 0x11);
     assert_eq!(machine.registers.pc, 4)
+  }
+
+  #[test]
+  fn it_executes_0xe8() {
+    let mut machine = Machine::new();
+    machine.registers.sp = 0xff;
+    machine.memory[0xff] = 0xab;
+    machine.memory[0xff + 1] = 0xcd;
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0xe8,
+      operand1: 0x0,
+      operand2: 0x0,
+    };
+    machine.registers.set_flag(0b1);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 1);
+    machine.registers.set_flag(0b1111);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 0xcdab);
   }
 
   #[test]
@@ -597,6 +854,42 @@ mod tests {
   }
 
   #[test]
+  fn it_executes_0xf0() {
+    let mut machine = Machine::new();
+    machine.registers.sp = 0xff;
+    machine.memory[0xff] = 0xab;
+    machine.memory[0xff + 1] = 0xcd;
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0xf0,
+      operand1: 0x0,
+      operand2: 0x0,
+    };
+    machine.registers.set_flag(0b10000000);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 1);
+    machine.registers.set_flag(0b0011);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 0xcdab);
+  }
+
+  #[test]
+  fn it_executes_0xf4() {
+    let mut machine = Machine::new();
+    machine.registers.set_flag(0b10000000);
+    machine.registers.sp = 0xff;
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0xf4,
+      operand1: 0x23,
+      operand2: 0xac,
+    };
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 3);
+    machine.registers.set_flag(0x0);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 0xac23);
+  }
+
+  #[test]
   fn it_executes_0xf6() {
     let mut machine = Machine::new();
     let operate = intel8080disassembler::Instruction {
@@ -608,6 +901,25 @@ mod tests {
     machine.execute(&operate);
     assert_eq!(machine.registers.pc, 2);
     assert_eq!(machine.registers.a, 0xbf);
+  }
+
+  #[test]
+  fn it_executes_0xf8() {
+    let mut machine = Machine::new();
+    machine.registers.sp = 0xff;
+    machine.memory[0xff] = 0xab;
+    machine.memory[0xff + 1] = 0xcd;
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0xf8,
+      operand1: 0x00,
+      operand2: 0x00,
+    };
+    machine.registers.set_flag(0b00);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 1);
+    machine.registers.set_flag(0b10001111);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 0xcdab);
   }
 
   #[test]
@@ -662,5 +974,17 @@ mod tests {
     machine.execute(&operate);
     assert_eq!(machine.registers.c(), 1);
     assert_eq!(machine.registers.z(), 0);
+    machine.registers.a = 0x47;
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0xfe,
+      operand1: 0x47,
+      operand2: 0x00,
+    };
+    machine.execute(&operate);
+    assert_eq!(machine.registers.z(), 1);
+    assert_eq!(machine.registers.c(), 0);
+    assert_eq!(machine.registers.p(), 1);
+    assert_eq!(machine.registers.s(), 0);
+    assert_eq!(machine.registers.a, 0x47);
   }
 }
