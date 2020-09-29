@@ -100,7 +100,7 @@ impl Registers {
         self.c = (v & 0xff) as u8;
       }
       RegisterPairs::D => {
-        self.b = (v >> 8) as u8;
+        self.d = (v >> 8) as u8;
         self.e = (v & 0xff) as u8;
       }
       RegisterPairs::H => {
