@@ -1,7 +1,7 @@
 use super::super::Machine;
 use super::register::{RegisterPairs};
 
-impl Machine {
+impl<'a> Machine<'a> {
   pub fn locator(&mut self, reg: u8) -> &mut u8 {
     match reg {
       0b111 => {
@@ -38,14 +38,14 @@ mod tests {
 
   #[test]
   fn it_locates_register() {
-    let mut machine = Machine::new();
+    let mut machine = Machine::new(vec!(&|x| {x}));
     machine.registers.b = 0x01;
     assert_eq!(*machine.locator(0), 0x01);
   }
 
   #[test]
   fn it_locates_memory() {
-    let mut machine = Machine::new();
+    let mut machine = Machine::new(vec!(&|x| {x}));
     machine.memory[0] = 0x01;
     machine.memory[65534] = 0x02;
     assert_eq!(*machine.locator(0b110), 0x01);
@@ -60,7 +60,7 @@ mod tests {
 
   #[test]
   fn it_load_rom() {
-    let mut machine = Machine::new();
+    let mut machine = Machine::new(vec!(&|x| {x}));
     machine.load_rom(&vec![0xc3, 0x23, 0x22], 0x00);
     assert_eq!(machine.memory[0], 0xc3);
     assert_eq!(machine.memory[1], 0x23);

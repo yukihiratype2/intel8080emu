@@ -1,19 +1,16 @@
 // use super::super::Machine;
+pub type Ports<'a> = Vec<&'a dyn Fn(u8) -> u8>;
 
-pub struct Pin {
-  pub a0: bool,
-  pub a1: bool,
-  pub a2: bool,
+pub struct Pin<'a> {
   pub int: bool,
+  pub ports: Ports<'a>
 }
 
-impl Pin {
-  pub fn new() -> Self {
+impl<'a> Pin<'a> {
+  pub fn new(ports: Ports) -> Pin {
     return Pin {
-      a0: false,
-      a1: false,
-      a2: false,
       int: false,
+      ports: ports
     }
   }
 }
