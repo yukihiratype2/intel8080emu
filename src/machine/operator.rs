@@ -542,6 +542,10 @@ impl<'a> Machine<'a> {
         }
         self.registers.pc += 3;
       }
+      0xdb => {
+        self.registers.a = self.pin.ports[ins.operand1 as usize](0);
+        self.registers.pc += 2;
+      }
       0xdc => {
         if self.registers.c() == 1 {
           self.execute(&intel8080disassembler::Instruction {
