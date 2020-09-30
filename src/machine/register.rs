@@ -59,6 +59,10 @@ impl Registers {
     self.flag = if (result & 0xff) == 0 { self.flag | 0b01000000 } else { self.flag & 0b10111111 };
   }
 
+  pub fn set_flag_cy_16(&mut self, result: u32) {
+    self.flag = if result > 0xffff { self.flag | 0b01 } else { self.flag & 0b11111110 };
+  }
+
   pub fn c(&self) -> u8 {
     return self.flag & 0b1;
   }
