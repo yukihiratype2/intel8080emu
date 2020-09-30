@@ -39,19 +39,3 @@ impl<'a> Machine<'a> {
     }
   }
 }
-
-struct TestStruct {
-  a: u8
-}
-
-impl TestStruct {
-  pub fn new() -> Self {
-    return TestStruct {
-      a: 12
-    }
-  }
-
-  pub fn read(&self, ) {
-    println!("{:x?}", self.a);
-  }
-}

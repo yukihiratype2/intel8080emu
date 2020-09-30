@@ -60,7 +60,7 @@ impl<'a> Machine<'a> {
         self.registers.pc += 1;
       },
       0x0e => {
-        self.registers.e = ins.operand1;
+        self.registers.c = ins.operand1;
         self.registers.pc += 2;
       },
       0x11 => {
@@ -102,6 +102,10 @@ impl<'a> Machine<'a> {
         self.registers.d = (result & 0xff) as u8;
         self.registers.pc += 1;
       },
+      0x16 => {
+        self.registers.d = ins.operand1;
+        self.registers.pc += 2;
+      },
       0x1c => {
         let result = (self.registers.e as u16) + 0x01;
         self.registers.set_flag(result);
@@ -119,6 +123,10 @@ impl<'a> Machine<'a> {
         self.registers.set_flag_cy_16(result);
         self.registers.set_rp(RegisterPairs::H, (result & 0xffff) as u16);
         self.registers.pc += 1;
+      },
+      0x1e => {
+        self.registers.e = ins.operand1;
+        self.registers.pc += 2;
       },
       0x21 => {
         // Not tested
@@ -166,6 +174,10 @@ impl<'a> Machine<'a> {
         self.registers.set_sub_flat(result);
         self.registers.l = (result & 0xff) as u8;
         self.registers.pc += 1;
+      },
+      0x2e => {
+        self.registers.l = ins.operand1;
+        self.registers.pc += 2;
       },
       0x31 => {
         self.registers.sp = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
@@ -373,6 +385,53 @@ impl<'a> Machine<'a> {
       },
       0x7d => {
         self.registers.a = self.registers.l;
+        self.registers.pc += 1;
+      },
+      0x80 => {
+        let result = (self.registers.a as u16) + (self.registers.b as u16);
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x81 => {
+        let result = (self.registers.a as u16) + (self.registers.c as u16);
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x82 => {
+        let result = (self.registers.a as u16) + (self.registers.d as u16);
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x83 => {
+        let result = (self.registers.a as u16) + (self.registers.e as u16);
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x84 => {
+        let result = (self.registers.a as u16) + (self.registers.h as u16);
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x85 => {
+        let result = (self.registers.a as u16) + (self.registers.l as u16);
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x87 => {
+        let result = (self.registers.a as u16) + (self.registers.a as u16);
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0xaf => {
+        self.registers.a = 0;
+        self.registers.set_flag(0);
         self.registers.pc += 1;
       },
       0xc0 => {
@@ -908,6 +967,21 @@ mod tests {
     machine.execute(&operate);
     assert_eq!(machine.registers.pc, 1);
     assert_eq!(machine.memory[0x1234], 0x45);
+  }
+
+  #[test]
+  fn it_executes_0x80() {
+    let mut machine = Machine::new(vec!(&|x| {x}));
+    machine.registers.a = 0x45;
+    machine.registers.b = 0x55;
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0x80,
+      operand1: 0x00,
+      operand2: 0x00,
+    };
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 1);
+    assert_eq!(machine.registers.a, 0x45 + 0x55);
   }
 
   #[test]
