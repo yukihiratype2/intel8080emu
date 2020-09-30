@@ -75,6 +75,15 @@ impl Machine {
         self.registers.a = self.memory[location as usize];
         self.registers.pc += 1;
       },
+      0x1f => {
+        let c = self.registers.c();
+        let a0 = self.registers.a & 0b1;
+        self.registers.flag &= 0b11111110;
+        self.registers.flag |= a0;
+        self.registers.a = self.registers.a >> 1;
+        self.registers.a |= c << 7;
+        self.registers.pc +=1;
+      },
       0x13 => {
         let result = self.registers.get_rp(RegisterPairs::D) as u32 + 1;
         self.registers.set_rp(RegisterPairs::D, (result & 0xffff) as u16);
@@ -771,6 +780,22 @@ mod tests {
     machine.execute(&operate);
     assert_eq!(machine.registers.pc, 1);
     assert_eq!(machine.registers.a, 0x12);
+  }
+
+  #[test]
+  fn it_executes_0x1f() {
+    let mut machine = Machine::new();
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0x1f,
+      operand1: 0x00,
+      operand2: 0x00,
+    };
+    machine.registers.a = 0b01101010;
+    machine.registers.set_flag(0xfff);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.a, 0b10110101);
+    assert_eq!(machine.registers.c(), 0);
+    assert_eq!(machine.registers.pc, 1);
   }
 
   #[test]
