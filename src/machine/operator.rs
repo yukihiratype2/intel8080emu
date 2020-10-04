@@ -198,6 +198,12 @@ impl<'a> Machine<'a> {
         self.memory[addr as usize] = self.registers.a;
         self.registers.pc += 3;
       },
+      0x35 => {
+        // Not tested
+        let result = (self.memory[self.registers.get_rp(RegisterPairs::H) as usize] + 100 - 1) & 0xff;
+        self.registers.set_sub_flat(result as u16);
+        self.registers.pc += 1;
+      },
       0x36 => {
         self.memory[self.registers.get_rp(RegisterPairs::H) as usize] = ins.operand1;
         self.registers.pc += 2;
@@ -404,6 +410,30 @@ impl<'a> Machine<'a> {
         self.registers.l = self.registers.a;
         self.registers.pc += 1;
       },
+      0x70 => {
+        self.memory[self.registers.get_rp(RegisterPairs::H) as usize] = self.registers.b;
+        self.registers.pc += 1;
+      },
+      0x71 => {
+        self.memory[self.registers.get_rp(RegisterPairs::H) as usize] = self.registers.c;
+        self.registers.pc += 1;
+      },
+      0x72 => {
+        self.memory[self.registers.get_rp(RegisterPairs::H) as usize] = self.registers.d;
+        self.registers.pc += 1;
+      },
+      0x73 => {
+        self.memory[self.registers.get_rp(RegisterPairs::H) as usize] = self.registers.e;
+        self.registers.pc += 1;
+      },
+      0x74 => {
+        self.memory[self.registers.get_rp(RegisterPairs::H) as usize] = self.registers.h;
+        self.registers.pc += 1;
+      },
+      0x75 => {
+        self.memory[self.registers.get_rp(RegisterPairs::H) as usize] = self.registers.l;
+        self.registers.pc += 1;
+      },
       0x77 => {
         self.memory[self.registers.get_rp(RegisterPairs::H) as usize] = self.registers.a;
         self.registers.pc += 1;
@@ -476,6 +506,11 @@ impl<'a> Machine<'a> {
         let result = (self.registers.a as u16) + (self.registers.a as u16);
         self.registers.set_flag(result);
         self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0xa7 => {
+        let result = self.registers.a & self.registers.a;
+        self.registers.set_flag(result as u16);
         self.registers.pc += 1;
       },
       0xaf => {
@@ -831,7 +866,8 @@ impl<'a> Machine<'a> {
         self.registers.pc += 3;
       }
       0xfb => {
-        println!("Interrupt Enabled");
+        println!("Interrupt ebled");
+        self.pin.ei = true;
         self.registers.pc += 1;
       },
       0xfc => {

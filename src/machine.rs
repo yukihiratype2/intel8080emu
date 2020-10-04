@@ -3,13 +3,12 @@ pub mod memory;
 pub mod utils;
 mod pin;
 mod operator;
-mod interrupt;
 
 pub struct Machine<'a> {
   pub registers: register::Registers,
   pub memory: memory::Memory,
   pub pin: pin::Pin<'a>,
-  pub interrupt: interrupt::Interrupt,
+  // pub interrupt: interrupt::Interrupt,
 }
 
 impl<'a> Machine<'a> {
@@ -19,7 +18,7 @@ impl<'a> Machine<'a> {
       registers: register::Registers::new(),
       pin: pin::Pin::new(ports),
       memory: m,
-      interrupt: interrupt::Interrupt::new(),
+      // interrupt: interrupt::Interrupt::new(),
     }
   }
 

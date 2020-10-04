@@ -78,6 +78,25 @@
       },
       "args": [],
       "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug integration test 'invaders_test'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--test=invaders_test",
+          "--package=intel8080emu"
+        ],
+        "filter": {
+          "name": "invaders_test",
+          "kind": "test"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
     }
   ]
 }
