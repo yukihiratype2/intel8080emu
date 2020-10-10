@@ -6,9 +6,9 @@ impl<'a> Machine<'a> {
   pub fn process_cycles(&mut self) {
     self.check_interrupt();
     let (ins, _) = intel8080disassembler::disassemble(self.registers.pc as usize, self.memory);
-    // if cfg!(debug_assertions) {
-    //   println!("{:x?}, pc: {:#x}, a: {:#x}, isrDelay: {:#x}", ins, self.registers.pc, self.registers.a, self.memory[0x20c0]);
-    // }
+    if cfg!(debug_assertions) {
+      println!("{:x?}, pc: {:#x}, a: {:#x}, isrDelay: {:#x}", ins, self.registers.pc, self.registers.a, self.memory[0x20c0]);
+    }
     self.execute(&ins);
   }
 
@@ -228,6 +228,13 @@ impl<'a> Machine<'a> {
         let addr = ((ins.operand2 as u16) << 8 ) + (ins.operand1 as u16);
         self.memory[addr as usize] = self.registers.a;
         self.registers.pc += 3;
+      },
+      0x34 => {
+        // Not tested
+        let result = (self.memory[self.registers.get_rp(RegisterPairs::H) as usize] as u16 + 1) & 0xff;
+        self.memory[self.registers.get_rp(RegisterPairs::H) as usize] = result as u8;
+        self.registers.set_flag(result as u16);
+        self.registers.pc += 1;
       },
       0x35 => {
         // Not tested
@@ -538,6 +545,12 @@ impl<'a> Machine<'a> {
         self.registers.a = (result & 0xff) as u8;
         self.registers.pc += 1;
       },
+      0x86 => {
+        let result = (self.registers.a as u16) + (self.memory[self.registers.get_rp(RegisterPairs::H) as usize] as u16);
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
       0x87 => {
         let result = (self.registers.a as u16) + (self.registers.a as u16);
         self.registers.set_flag(result);
@@ -582,6 +595,13 @@ impl<'a> Machine<'a> {
       0x8d => {
         // Not tested
         let result = (self.registers.a as u16) + (self.registers.l as u16) + (self.registers.flag & 0b1 ) as u16;
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x8e => {
+        // Not tested
+        let result = (self.registers.a as u16) + (self.memory[self.registers.get_rp(RegisterPairs::H) as usize] as u16) + (self.registers.flag & 0b1 ) as u16;
         self.registers.set_flag(result);
         self.registers.a = (result & 0xff) as u8;
         self.registers.pc += 1;
@@ -636,6 +656,13 @@ impl<'a> Machine<'a> {
         self.registers.a = (result & 0xff) as u8;
         self.registers.pc += 1;
       }
+      0x96 => {
+        let m = (!self.memory[self.registers.get_rp(RegisterPairs::H) as usize] + 1) as u16;
+        let result = (self.registers.a as u16) + m;
+        self.registers.set_sub_flat(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      }
       0x97 => {
         let a = (!self.registers.a + 1) as u16;
         let result = (self.registers.a as u16) + a;
@@ -643,9 +670,143 @@ impl<'a> Machine<'a> {
         self.registers.a = (result & 0xff) as u8;
         self.registers.pc += 1;
       }
+      0x98 => {
+        // Not tested
+        let to_add = !((((self.registers.b) as u16 + (self.registers.flag & 0b1) as u16) & 0xff) as u8) + 1;
+        let result = self.registers.a as u16 + to_add as u16;
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x99 => {
+        let to_add = !((((self.registers.c) as u16 + (self.registers.flag & 0b1) as u16) & 0xff) as u8) + 1;
+        let result = self.registers.a as u16 + to_add as u16;
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x9a => {
+        let to_add = !((((self.registers.d) as u16 + (self.registers.flag & 0b1) as u16) & 0xff) as u8) + 1;
+        let result = self.registers.a as u16 + to_add as u16;
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x9c => {
+        let to_add = !((((self.registers.h) as u16 + (self.registers.flag & 0b1) as u16) & 0xff) as u8) + 1;
+        let result = self.registers.a as u16 + to_add as u16;
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x9d => {
+        let to_add = !((((self.registers.l) as u16 + (self.registers.flag & 0b1) as u16) & 0xff) as u8) + 1;
+        let result = self.registers.a as u16 + to_add as u16;
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x9e => {
+        let to_add = !((((self.memory[self.registers.get_rp(RegisterPairs::H) as usize]) as u16 + (self.registers.flag & 0b1) as u16) & 0xff) as u8) + 1;
+        let result = self.registers.a as u16 + to_add as u16;
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x9f => {
+        let to_add = !((((self.registers.a) as u16 + (self.registers.flag & 0b1) as u16) & 0xff) as u8) + 1;
+        let result = self.registers.a as u16 + to_add as u16;
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x9b => {
+        let to_add = !((((self.registers.e) as u16 + (self.registers.flag & 0b1) as u16) & 0xff) as u8) + 1;
+        let result = self.registers.a as u16 + to_add as u16;
+        self.registers.set_flag(result);
+        self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0xa0 => {
+        let result = self.registers.a & self.registers.b;
+        self.registers.set_flag(result as u16);
+        self.registers.a = result;
+        self.registers.pc += 1;
+      },
+      0xa1 => {
+        let result = self.registers.a & self.registers.c;
+        self.registers.set_flag(result as u16);
+        self.registers.a = result;
+        self.registers.pc += 1;
+      },
+      0xa2 => {
+        let result = self.registers.a & self.registers.d;
+        self.registers.set_flag(result as u16);
+        self.registers.a = result;
+        self.registers.pc += 1;
+      },
+      0xa3 => {
+        let result = self.registers.a & self.registers.e;
+        self.registers.set_flag(result as u16);
+        self.registers.a = result;
+        self.registers.pc += 1;
+      },
+      0xa4 => {
+        let result = self.registers.a & self.registers.h;
+        self.registers.a = result;
+        self.registers.set_flag(result as u16);
+        self.registers.pc += 1;
+      },
+      0xa5 => {
+        let result = self.registers.a & self.registers.l;
+        self.registers.a = result;
+        self.registers.set_flag(result as u16);
+        self.registers.pc += 1;
+      },
+      0xa6 => {
+        let result = self.registers.a & self.memory[self.registers.get_rp(RegisterPairs::H) as usize];
+        self.registers.a = result;
+        self.registers.set_flag(result as u16);
+        self.registers.pc += 1;
+      },
       0xa7 => {
         let result = self.registers.a & self.registers.a;
         self.registers.set_flag(result as u16);
+        self.registers.pc += 1;
+      },
+      0xa8 => {
+        self.registers.a ^= self.registers.b;
+        self.registers.set_flag(self.registers.a as u16);
+        self.registers.pc += 1;
+      },
+      0xa9 => {
+        self.registers.a ^= self.registers.c;
+        self.registers.set_flag(self.registers.a as u16);
+        self.registers.pc += 1;
+      },
+      0xaa => {
+        self.registers.a ^= self.registers.d;
+        self.registers.set_flag(self.registers.a as u16);
+        self.registers.pc += 1;
+      },
+      0xab => {
+        self.registers.a ^= self.registers.e;
+        self.registers.set_flag(self.registers.a as u16);
+        self.registers.pc += 1;
+      },
+      0xac => {
+        self.registers.a ^= self.registers.h;
+        self.registers.set_flag(self.registers.a as u16);
+        self.registers.pc += 1;
+      },
+      0xad => {
+        self.registers.a ^= self.registers.l;
+        self.registers.set_flag(self.registers.a as u16);
+        self.registers.pc += 1;
+      },
+      0xae => {
+        self.registers.a ^= self.memory[self.registers.get_rp(RegisterPairs::H) as usize];
+        self.registers.set_flag(self.registers.a as u16);
         self.registers.pc += 1;
       },
       0xaf => {
@@ -689,6 +850,59 @@ impl<'a> Machine<'a> {
         let result = (self.registers.a as u16) | (self.memory[self.registers.get_rp(RegisterPairs::H) as usize] as u16);
         self.registers.set_flag(result);
         self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0xb7 => {
+        self.registers.a |= self.registers.a;
+        self.registers.set_flag(self.registers.a as u16);
+        self.registers.pc += 1;
+      },
+      0xb8 => {
+        let op = (!self.registers.b) as u16 + 1;
+        let result = self.registers.a as u16 + op;
+        self.registers.set_sub_flat(result);
+        self.registers.pc += 1;
+      },
+      0xb9 => {
+        let op = (!self.registers.c) as u16 + 1;
+        let result = self.registers.a as u16 + op;
+        self.registers.set_sub_flat(result);
+        self.registers.pc += 1;
+      },
+      0xba => {
+        let op = (!self.registers.d) as u16 + 1;
+        let result = self.registers.a as u16 + op;
+        self.registers.set_sub_flat(result);
+        self.registers.pc += 1;
+      },
+      0xbb => {
+        let op = (!self.registers.e) as u16 + 1;
+        let result = self.registers.a as u16 + op;
+        self.registers.set_sub_flat(result);
+        self.registers.pc += 1;
+      },
+      0xbc => {
+        let op = (!self.registers.h) as u16 + 1;
+        let result = self.registers.a as u16 + op;
+        self.registers.set_sub_flat(result);
+        self.registers.pc += 1;
+      },
+      0xbd => {
+        let op = (!self.registers.l) as u16 + 1;
+        let result = self.registers.a as u16 + op;
+        self.registers.set_sub_flat(result);
+        self.registers.pc += 1;
+      },
+      0xbe => {
+        let op = (!self.memory[self.registers.get_rp(RegisterPairs::H) as usize]) as u16 + 1;
+        let result = self.registers.a as u16 + op;
+        self.registers.set_sub_flat(result);
+        self.registers.pc += 1;
+      },
+      0xbf => {
+        let op = (!self.registers.a) as u16 + 1;
+        let result = self.registers.a as u16 + op;
+        self.registers.set_sub_flat(result);
         self.registers.pc += 1;
       },
       0xc0 => {
