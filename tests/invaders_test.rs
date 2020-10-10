@@ -6,7 +6,7 @@ use std::time::Duration;
 
 
 #[test]
-// #[ignore]
+#[ignore]
 fn it_run_invaders() {
     let raw = fs::read("./tests/invaders.bin").expect("E");
     let machine = Arc::new(Mutex::new(intel8080emu::Machine::new(vec!(
@@ -29,7 +29,7 @@ fn it_run_invaders() {
     thread::spawn(move || {
         loop {
             tx.send(true).unwrap();
-            thread::sleep(Duration::from_millis(10));
+            thread::sleep(Duration::from_millis(20));
         }
     });
 
@@ -41,8 +41,9 @@ fn it_run_invaders() {
         }
 
     });
+    let m2 = machine.clone();
     loop {
-        machine.clone().lock().unwrap().process_cycles();
+        m2.lock().unwrap().process_cycles();
     }
 
 }
