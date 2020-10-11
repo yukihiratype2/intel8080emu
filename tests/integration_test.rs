@@ -2,7 +2,7 @@ use std::fs;
 use intel8080emu;
 
 #[test]
-// #[ignore]
+#[ignore]
 fn it_finish_test() {
     let raw = fs::read("./tests/cpudiag.bin").expect("E");
     let mut machine = intel8080emu::Machine::new(vec!());

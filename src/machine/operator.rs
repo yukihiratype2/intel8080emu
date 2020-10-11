@@ -7,7 +7,7 @@ impl<'a> Machine<'a> {
     self.check_interrupt();
     let (ins, _) = intel8080disassembler::disassemble(self.registers.pc as usize, self.memory);
     if cfg!(debug_assertions) {
-      println!("{:x?}, pc: {:#x}, a: {:#x}, isrDelay: {:#x}", ins, self.registers.pc, self.registers.a, self.memory[0x20c0]);
+      println!("{:>2x?}, pc: 0x{:0>4x}, a: 0x{:0>2x}, isrDelay: 0x{:0>2x}", ins, self.registers.pc, self.registers.a, self.memory[0x20c0]);
     }
     self.execute(&ins);
   }
@@ -23,7 +23,11 @@ impl<'a> Machine<'a> {
           ((ins.operand2 as u16) << 8) + (ins.operand1 as u16),
         );
         self.registers.pc += 3;
-      }
+      },
+      0x02 => {
+        self.memory[self.registers.get_rp(RegisterPairs::B) as usize] = self.registers.a;
+        self.registers.pc += 1;
+      },
       0x03 => {
         let result = self.registers.get_rp(RegisterPairs::B) as u32 + 1;
         self.registers.set_rp(RegisterPairs::B, (result & 0xffff) as u16);
@@ -65,6 +69,11 @@ impl<'a> Machine<'a> {
         self.registers.a = self.memory[self.registers.get_rp(RegisterPairs::B) as usize];
         self.registers.pc += 1;
       }
+      0x0b => {
+        let result = ((self.registers.get_rp(RegisterPairs::B) as u32) + 0x10000 - 1) & 0xffff;
+        self.registers.set_rp(RegisterPairs::B, result as u16);
+        self.registers.pc += 1;
+      }
       0x0c => {
         // Not tested
         let result = (self.registers.c as u16) + 0x01;
@@ -98,6 +107,10 @@ impl<'a> Machine<'a> {
         );
         self.registers.pc += 3;
       }
+      0x12 => {
+        self.memory[self.registers.get_rp(RegisterPairs::D) as usize] = self.registers.a;
+        self.registers.pc += 1;
+      },
       0x1a => {
         let location = self.registers.get_rp(RegisterPairs::D);
         self.registers.a = self.memory[location as usize];
@@ -134,6 +147,11 @@ impl<'a> Machine<'a> {
         self.registers.d = ins.operand1;
         self.registers.pc += 2;
       },
+      0x1b => {
+        let result = ((self.registers.get_rp(RegisterPairs::D) as u32) + 0x10000 - 1) & 0xffff;
+        self.registers.set_rp(RegisterPairs::D, result as u16);
+        self.registers.pc += 1;
+      }
       0x1c => {
         let result = (self.registers.e as u16) + 0x01;
         self.registers.set_flag(result);
@@ -162,6 +180,12 @@ impl<'a> Machine<'a> {
         self.registers.set_rp(RegisterPairs::H, result);
         self.registers.pc += 3;
       }
+      0x22 => {
+        let addr = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
+        self.memory[addr as usize] = self.registers.l;
+        self.memory[addr as usize + 1] = self.registers.h;
+        self.registers.pc += 3;
+      },
       0x23 => {
         let result = self.registers.get_rp(RegisterPairs::H) as u32 + 1;
         self.registers.set_rp(RegisterPairs::H, (result & 0xffff) as u16);
@@ -198,8 +222,8 @@ impl<'a> Machine<'a> {
       },
       0x2b => {
         // Not tested
-        let result = (self.registers.get_rp(RegisterPairs::H) as u32 + 0x100) - 1;
-        self.registers.set_rp(RegisterPairs::H, (result & 0xff) as u16);
+        let result = (self.registers.get_rp(RegisterPairs::H) as u32 + 0x10000) - 1;
+        self.registers.set_rp(RegisterPairs::H, (result & 0xffff) as u16);
         self.registers.pc += 1;
       },
       0x2c => {
@@ -218,6 +242,10 @@ impl<'a> Machine<'a> {
       0x2e => {
         self.registers.l = ins.operand1;
         self.registers.pc += 2;
+      },
+      0x2f => {
+        self.registers.a = !self.registers.a;
+        self.registers.pc += 1;
       },
       0x31 => {
         self.registers.sp = ((ins.operand2 as u16) << 8) + (ins.operand1 as u16);
@@ -271,6 +299,10 @@ impl<'a> Machine<'a> {
         let result = (self.registers.a as u16) + 1;
         self.registers.set_flag(result);
         self.registers.a = (result & 0xff) as u8;
+        self.registers.pc += 1;
+      },
+      0x3f => {
+        self.registers.flag ^= 0b1;
         self.registers.pc += 1;
       },
       0x41 => {
@@ -1363,6 +1395,25 @@ mod tests {
   }
 
   #[test]
+  fn it_executes_0x22() {
+
+    let mut machine = Machine::new(vec!(&|x| {x}));
+    machine.memory[0x1234] = 0xab;
+    machine.memory[0x1234 + 1] = 0xcd;
+    machine.registers.h = 0x34;
+    machine.registers.l = 0x56;
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0x22,
+      operand1: 0x34,
+      operand2: 0x12,
+    };
+    machine.execute(&operate);
+    assert_eq!(machine.registers.pc, 3);
+    assert_eq!(machine.memory[0x1234], 0x56);
+    assert_eq!(machine.memory[0x1234 + 1], 0x34);
+  }
+
+  #[test]
   fn it_executes_0x2a() {
     let mut machine = Machine::new(vec!(&|x| {x}));
     machine.memory[0x1234] = 0xab;
@@ -1388,6 +1439,22 @@ mod tests {
     };
     machine.execute(&operate);
     assert_eq!(machine.registers.sp, 0x2412);
+  }
+
+  #[test]
+  fn it_executes_0x3f() {
+    let mut machine = Machine::new(vec!(&|x| {x}));
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0x3f,
+      operand1: 0x00,
+      operand2: 0x00,
+    };
+    machine.execute(&operate);
+    assert_eq!(machine.registers.c(), 1);
+    machine.registers.set_flag(0xffff);
+    machine.execute(&operate);
+    assert_eq!(machine.registers.c(), 0);
+    assert_eq!(machine.registers.pc, 2);
   }
 
   #[test]

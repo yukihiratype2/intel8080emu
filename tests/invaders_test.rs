@@ -6,7 +6,7 @@ use std::time::Duration;
 
 
 #[test]
-#[ignore]
+// #[ignore]
 fn it_run_invaders() {
     let raw = fs::read("./tests/invaders.bin").expect("E");
     let machine = Arc::new(Mutex::new(intel8080emu::Machine::new(vec!(
