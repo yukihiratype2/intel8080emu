@@ -38,14 +38,14 @@ mod tests {
 
   #[test]
   fn it_locates_register() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.b = 0x01;
     assert_eq!(*machine.locator(0), 0x01);
   }
 
   #[test]
   fn it_locates_memory() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.memory[0] = 0x01;
     machine.memory[65534] = 0x02;
     assert_eq!(*machine.locator(0b110), 0x01);
@@ -60,7 +60,7 @@ mod tests {
 
   #[test]
   fn it_load_rom() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.load_rom(&vec![0xc3, 0x23, 0x22], 0x00);
     assert_eq!(machine.memory[0], 0xc3);
     assert_eq!(machine.memory[1], 0x23);

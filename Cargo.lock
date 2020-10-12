@@ -10,4 +10,9 @@ name = "intel8080emu"
 version = "0.1.0"
 dependencies = [
  "intel8080disassembler",
+ "shift_register",
 ]
+
+[[package]]
+name = "shift_register"
+version = "0.1.0"

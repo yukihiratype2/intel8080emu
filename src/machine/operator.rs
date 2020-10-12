@@ -1059,7 +1059,13 @@ impl<'a> Machine<'a> {
         self.registers.pc += 3;
       }
       0xd3 => {
-        self.pin.ports[ins.operand1 as usize](self.registers.a);
+        match &mut self.pin.ports {
+          Some(port) => {
+            port[ins.operand1 as usize](self.registers.a);
+          },
+          None => {}
+        }
+        // self.pin.ports[ins.operand1 as usize](self.registers.a);
         self.registers.pc += 2;
       }
       0xd4 => {
@@ -1105,7 +1111,12 @@ impl<'a> Machine<'a> {
         self.registers.pc += 3;
       }
       0xdb => {
-        self.registers.a = self.pin.ports[ins.operand1 as usize](0);
+        match &mut self.pin.ports {
+          Some(port) => {
+            port[ins.operand1 as usize](0);
+          },
+          None => {}
+        }
         self.registers.pc += 2;
       }
       0xdc => {
@@ -1336,7 +1347,7 @@ mod tests {
   use super::*;
   #[test]
   fn it_executes_0x01() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0x01,
       operand1: 0x12,
@@ -1349,7 +1360,7 @@ mod tests {
 
   #[test]
   fn it_executes_0x14() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0x14,
       operand1: 0x00,
@@ -1364,7 +1375,7 @@ mod tests {
 
   #[test]
   fn it_executes_0x1a() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.memory[0xcdef] = 0x12;
     machine.registers.d = 0xcd;
     machine.registers.e = 0xef;
@@ -1380,7 +1391,7 @@ mod tests {
 
   #[test]
   fn it_executes_0x1f() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0x1f,
       operand1: 0x00,
@@ -1397,7 +1408,7 @@ mod tests {
   #[test]
   fn it_executes_0x22() {
 
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.memory[0x1234] = 0xab;
     machine.memory[0x1234 + 1] = 0xcd;
     machine.registers.h = 0x34;
@@ -1415,7 +1426,7 @@ mod tests {
 
   #[test]
   fn it_executes_0x2a() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.memory[0x1234] = 0xab;
     machine.memory[0x1234 + 1] = 0xcd;
     let operate = intel8080disassembler::Instruction {
@@ -1431,7 +1442,7 @@ mod tests {
 
   #[test]
   fn it_executes_0x31() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0x31,
       operand1: 0x12,
@@ -1443,7 +1454,7 @@ mod tests {
 
   #[test]
   fn it_executes_0x3f() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0x3f,
       operand1: 0x00,
@@ -1459,7 +1470,7 @@ mod tests {
 
   #[test]
   fn it_executes_0x47() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0x47,
       operand1: 0x00,
@@ -1473,7 +1484,7 @@ mod tests {
 
   #[test]
   fn it_executes_0x04() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0x04,
       operand1: 0x00,
@@ -1490,7 +1501,7 @@ mod tests {
 
   #[test]
   fn it_executes_0x0d() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0x0d,
       operand1: 0x00,
@@ -1504,7 +1515,7 @@ mod tests {
 
   #[test]
   fn it_executes_0x23() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0x23,
       operand1: 0x00,
@@ -1521,7 +1532,7 @@ mod tests {
 
   #[test]
   fn it_executes_0x29() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0x29,
       operand1: 0x00,
@@ -1540,7 +1551,7 @@ mod tests {
 
   #[test]
   fn it_executes_0x5e() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0x5e,
       operand1: 0x00,
@@ -1555,7 +1566,7 @@ mod tests {
 
   #[test]
   fn it_executes_0x77() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.set_rp(RegisterPairs::H, 0x1234);
     machine.registers.a = 0x45;
     let operate = intel8080disassembler::Instruction {
@@ -1570,7 +1581,7 @@ mod tests {
 
   #[test]
   fn it_executes_0x80() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.a = 0x45;
     machine.registers.b = 0x55;
     let operate = intel8080disassembler::Instruction {
@@ -1585,7 +1596,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xc0() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     machine.memory[0xff] = 0xab;
     machine.memory[0xff + 1] = 0xcd;
@@ -1603,7 +1614,7 @@ mod tests {
   }
   #[test]
   fn it_executes_0xc3() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xc3,
       operand1: 0xab,
@@ -1615,7 +1626,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xc4() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     let operate = intel8080disassembler::Instruction {
       opcode: 0xc4,
@@ -1632,7 +1643,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xc6() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xc6,
       operand1: 0x06,
@@ -1651,7 +1662,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xc8() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     machine.memory[0xff] = 0xab;
     machine.memory[0xff + 1] = 0xcd;
@@ -1669,7 +1680,7 @@ mod tests {
   }
   #[test]
   fn it_executes_0xc9() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     machine.memory[0xff] = 0x12;
     machine.memory[0xff + 1] = 0xab;
@@ -1685,7 +1696,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xca() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xca,
       operand1: 0xab,
@@ -1700,7 +1711,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xcc() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     let operate = intel8080disassembler::Instruction {
       opcode: 0xcc,
@@ -1717,7 +1728,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xcd() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xeeee;
     machine.registers.pc = 0x1234;
     let operate = intel8080disassembler::Instruction {
@@ -1735,7 +1746,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xce() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xce,
       operand1: 0xab,
@@ -1752,7 +1763,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xd0() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     machine.memory[0xff] = 0xab;
     machine.memory[0xff + 1] = 0xcd;
@@ -1771,7 +1782,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xd2() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xd2,
       operand1: 0x56,
@@ -1787,7 +1798,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xd4() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xd4,
       operand1: 0x56,
@@ -1804,7 +1815,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xd5() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     let operate = intel8080disassembler::Instruction {
       opcode: 0xd5,
@@ -1821,7 +1832,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xd6() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xd6,
       operand1: 0x01,
@@ -1845,7 +1856,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xd8() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     machine.memory[0xff] = 0xab;
     machine.memory[0xff + 1] = 0xcd;
@@ -1864,7 +1875,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xda() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xda,
       operand1: 0x56,
@@ -1879,7 +1890,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xdc() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xdc,
       operand1: 0x56,
@@ -1896,7 +1907,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xde() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.set_flag(0x0);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xde,
@@ -1916,7 +1927,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xe0() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     machine.memory[0xff] = 0xab;
     machine.memory[0xff + 1] = 0xcd;
@@ -1935,7 +1946,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xe1() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     machine.memory[0xff] = 0x12;
     machine.memory[0xff + 1] = 0x23;
@@ -1953,7 +1964,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xe2() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.set_flag(0x0);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xe2,
@@ -1969,7 +1980,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xe3() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     machine.memory[0xff] = 0xab;
     machine.memory[0xff + 1] = 0xcd;
@@ -1989,7 +2000,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xe4() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.set_flag(0x0);
     machine.registers.sp = 0xff;
     let operate = intel8080disassembler::Instruction {
@@ -2006,7 +2017,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xe6() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xe6,
       operand1: 0x10,
@@ -2022,7 +2033,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xe8() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     machine.memory[0xff] = 0xab;
     machine.memory[0xff + 1] = 0xcd;
@@ -2041,7 +2052,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xe9() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.set_rp(RegisterPairs::H, 0x1234);
     machine.registers.pc = 0xabcd;
     let operate = intel8080disassembler::Instruction {
@@ -2056,7 +2067,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xea() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.set_flag(0b1);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xea,
@@ -2072,7 +2083,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xeb() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xeb,
       operand1: 0x00,
@@ -2088,7 +2099,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xec() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     let operate = intel8080disassembler::Instruction {
       opcode: 0xec,
@@ -2105,7 +2116,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xee() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xee,
       operand1: 0x81,
@@ -2119,7 +2130,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xf2() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.set_flag(0b10000000);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xf2,
@@ -2135,7 +2146,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xf0() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     machine.memory[0xff] = 0xab;
     machine.memory[0xff + 1] = 0xcd;
@@ -2154,7 +2165,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xf4() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.set_flag(0b10000000);
     machine.registers.sp = 0xff;
     let operate = intel8080disassembler::Instruction {
@@ -2171,7 +2182,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xf6() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xf6,
       operand1: 0x0f,
@@ -2185,7 +2196,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xf8() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     machine.memory[0xff] = 0xab;
     machine.memory[0xff + 1] = 0xcd;
@@ -2204,7 +2215,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xfa() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     let operate = intel8080disassembler::Instruction {
       opcode: 0xfa,
       operand1: 0x23,
@@ -2219,7 +2230,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xfc() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.sp = 0xff;
     let operate = intel8080disassembler::Instruction {
       opcode: 0xfc,
@@ -2236,7 +2247,7 @@ mod tests {
 
   #[test]
   fn it_executes_0xfe() {
-    let mut machine = Machine::new(vec!(&|x| {x}));
+    let mut machine = Machine::new(None);
     machine.registers.a = 0x4a;
     let operate = intel8080disassembler::Instruction {
       opcode: 0xfe,

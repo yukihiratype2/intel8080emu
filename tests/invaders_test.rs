@@ -4,22 +4,29 @@ use std::thread;
 use std::sync::{mpsc, Arc, Mutex};
 use std::time::Duration;
 
+use shift_register::ShiftRegister;
+
 
 #[test]
 // #[ignore]
 fn it_run_invaders() {
     let raw = fs::read("./tests/invaders.bin").expect("E");
-    let machine = Arc::new(Mutex::new(intel8080emu::Machine::new(vec!(
-        &|x| {println!("0: {:?}", x);x},
-        &|x| {println!("1: {:?}", x);x},
-        &|x| {println!("2: {:?}", x);x},
-        &|x| {println!("3: {:?}", x);x},
-        &|x| {println!("4: {:?}", x);x},
-        &|x| {println!("5: {:?}", x);x},
-        &|x| {println!("6: {:?}", x);x},
-        &|x| {println!("7: {:?}", x);x},
-        &|x| {println!("8: {:?}", x);x},
-    ))));
+    let sr = Arc::new(Mutex::new(ShiftRegister::new()));
+
+    let f = & |x:u8| {
+        sr.clone().lock().unwrap().write(x);
+        x
+    };
+    let machine = Arc::new(Mutex::new(intel8080emu::Machine::new(Some([
+        Box::new(f.clone()),
+        Box::new(f.clone()),
+        Box::new(f.clone()),
+        Box::new(f.clone()),
+        Box::new(f.clone()),
+        Box::new(f.clone()),
+        Box::new(f.clone()),
+        Box::new(f.clone()),
+    ]))));
 
     let (tx, rx) = mpsc::channel();
 
@@ -33,13 +40,16 @@ fn it_run_invaders() {
         }
     });
 
-    let m = machine.clone();
+    let interrupt = machine.clone().lock().unwrap().pin.int.clone();
+    let rst = machine.clone().lock().unwrap().pin.rst.clone();
     std::thread::spawn(move || {
         for _received in rx {
-            m.lock().unwrap().pin.rst = 0x10;
-            m.lock().unwrap().pin.int = true;
+            // m = true;
+            *interrupt.lock().unwrap() = true;
+            *rst.lock().unwrap() = 0x10;
+            // m.lock().unwrap().pin.rst = 0x10;
+            // m.lock().unwrap().pin.int = true;
         }
-
     });
     let m2 = machine.clone();
     loop {

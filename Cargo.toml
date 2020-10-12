@@ -8,3 +8,6 @@ edition = "2018"
 
 [dependencies]
 intel8080disassembler = { git = "https://github.com/yukihiratype2/intel8080disassembler"}
+
+[dev-dependencies]
+shift_register = { path = "../shift_register"}
