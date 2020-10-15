@@ -208,6 +208,16 @@ impl<'a> Machine<'a> {
         self.registers.h = ins.operand1;
         self.registers.pc += 2;
       },
+      0x27 => {
+        if self.registers.a & 0xf > 9 {
+          self.registers.a += 6;
+        }
+        if self.registers.a & 0xf0 > 0x90 {
+          let res = self.registers.a as u16 + 0x60;
+          self.registers.a = (res & 0xff) as u8;
+        }
+        self.registers.pc += 1;
+      },
       0x29 => {
         let result = self.registers.get_rp(RegisterPairs::H) as u32 * 2;
         self.registers.set_flag_cy_16(result);
@@ -1528,6 +1538,26 @@ mod tests {
     machine.registers.set_rp(RegisterPairs::H, 0xffff);
     machine.execute(&operate);
     assert_eq!(machine.registers.get_rp(RegisterPairs::H), 0x0);
+  }
+
+  #[test]
+  fn it_executes_0x27() {
+    let mut machine = Machine::new(None);
+    let add = intel8080disassembler::Instruction {
+      opcode: 0x80,
+      operand1: 0x00,
+      operand2: 0x00,
+    };
+    machine.registers.a = 0x25;
+    machine.registers.b = 0x48;
+    machine.execute(&add);
+    let operate = intel8080disassembler::Instruction {
+      opcode: 0x27,
+      operand1: 0x00,
+      operand2: 0x00,
+    };
+    machine.execute(&operate);
+    assert_eq!(machine.registers.a, 0x73);
   }
 
   #[test]

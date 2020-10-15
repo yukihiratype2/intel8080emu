@@ -13,19 +13,29 @@ fn it_run_invaders() {
     let raw = fs::read("./tests/invaders.bin").expect("E");
     let sr = Arc::new(Mutex::new(ShiftRegister::new()));
 
-    let f = & |x:u8| {
+    let write = & |x:u8| {
         sr.clone().lock().unwrap().write(x);
         x
     };
+
+    let set_offset = & |x:u8| {
+        sr.clone().lock().unwrap().offset(x);
+        x
+    };
+
+    let read = & |x:u8| {
+        sr.clone().lock().unwrap().read(0);
+        x
+    };
     let machine = Arc::new(Mutex::new(intel8080emu::Machine::new(Some([
-        Box::new(f.clone()),
-        Box::new(f.clone()),
-        Box::new(f.clone()),
-        Box::new(f.clone()),
-        Box::new(f.clone()),
-        Box::new(f.clone()),
-        Box::new(f.clone()),
-        Box::new(f.clone()),
+        Box::new(&|x| x),
+        Box::new(&|x| x),
+        Box::new(set_offset),
+        Box::new(&|x| x),
+        Box::new(write),
+        Box::new(&|x| x),
+        Box::new(read),
+        Box::new(&|x| x),
     ]))));
 
     let (tx, rx) = mpsc::channel();
